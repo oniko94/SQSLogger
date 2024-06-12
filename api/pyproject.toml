@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "api"
+version = "0.1.0"
+package-mode = false
+description = "Test Assignment: create a FastAPI endpoint offloading request processing to SQS and writing logs to a Postgres DB"
+authors = ["oniko94 <onikolaiev94@outlook.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "~0.111.0"
+sqlalchemy = "~2.0.30"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
