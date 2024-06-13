@@ -8,5 +8,4 @@ app = FastAPI()
 
 @app.post("/log_entry")
 async def log_entry(entry: LogEntry):
-    print(entry)
     return entry

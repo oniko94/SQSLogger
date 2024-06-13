@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from typing import datetime
 from pydantic import BaseModel
 
 
@@ -13,4 +13,4 @@ class LogEntry(LogEntryBase):
     timestamp: datetime
 
     class Config:
-        from_attributes = True    
+        from_attributes = True
