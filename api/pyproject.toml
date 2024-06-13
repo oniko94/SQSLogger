@@ -13,6 +13,47 @@ fastapi = "~0.111.0"
 sqlalchemy = "~2.0.30"
 
 
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+flake8 = "^7.0.0"
+flake8-pyproject = "^1.2.3"
+isort = "^5.13.2"
+pyupgrade = "^3.16.0"
+pyproject-pyupgrade = "^0.1.1"
+flake8-bandit = "^4.1.1"
+flake8-print = "^5.0.0"
+flake8-builtins = "^2.5.0"
+flake8-eradicate = "^1.5.0"
+pep8-naming = "^0.14.1"
+flake8-debugger = "^4.1.2"
+flake8-type-checking = "^2.9.1"
+flake8-bugbear = "^24.4.26"
+flake8-quotes = "^3.4.0"
+
+[tool.poetry.group.stubs.dependencies]
+types-requests = "~2.31.0.20240218"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 80
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 80
+
+[tool.flake8]
+max-line-length = 80
+inline-quotes = "double"
+ignore = ["B009", "B010", "W503"]
+per-file-ignores = ["tests/*: S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.pyupgrade]
+py311-plus = true
