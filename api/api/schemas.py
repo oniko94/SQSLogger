@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import datetime
+from datetime import datetime
 from pydantic import BaseModel
 
 
@@ -9,7 +9,7 @@ class LogEntryBase(BaseModel):
 
 
 class LogEntry(LogEntryBase):
-    id: int
+    pk: int
     timestamp: datetime
 
     class Config:
