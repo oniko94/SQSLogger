@@ -1,23 +1,37 @@
+# -*- coding: utf-8 -*-
+import os
 import sys
+import sqlalchemy as sa
+
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import (
+    AsyncAttrs,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import DeclarativeBase
 
 
 try:
-    DATABASE_URL = os.environ.get("DATABASE_URL")
+    DATABASE_URL = os.environ["DATABASE_URL"]
 except KeyError:
-    sys.exit("No database address found in environment; Exiting...")
-finally:
+    print("No database address found in env; Exiting...", file=sys.stderr)
+    sys.exit(1)
+else:
     engine = create_async_engine(DATABASE_URL)
+    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
-Base = declarative_base()
+
+class Base(AsyncAttrs, DeclarativeBase):
+    pass
 
 
 class LogEntry(Base):
     __tablename__ = "log_entries"
-    pk = Column(Integer, primary_key=True, index=True)
-    message = Column(String, index=True)
-    level = Column(String, index=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    pk = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    message = sa.Column(sa.Text, nullable=False)
+    level = sa.Column(sa.Text, nullable=False)
+    timestamp = sa.Column(
+        sa.DateTime, server_default=sa.func.current_timestamp(), nullable=False
+    )

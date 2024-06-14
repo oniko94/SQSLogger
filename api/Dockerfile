@@ -5,4 +5,4 @@ RUN pip3 install --no-cache-dir --upgrade poetry
 RUN poetry config virtualenvs.create false
 RUN poetry install
 COPY . .
-CMD ["fastapi", "run", "api/main.py"]
+ENTRYPOINT  ["/bin/sh", "run.sh"]
