@@ -1,16 +1,9 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class LogEntryBase(BaseModel):
+class LogEntry(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     message: str
     level: str
-
-
-class LogEntry(LogEntryBase):
-    pk: int
-    timestamp: datetime
-
-    class Config:
-        from_attributes = True

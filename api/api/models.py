@@ -1,26 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
-import sys
 import sqlalchemy as sa
-
-from datetime import datetime
-from sqlalchemy.ext.asyncio import (
-    AsyncAttrs,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
-
-
-try:
-    DATABASE_URL = os.environ["DATABASE_URL"]
-except KeyError:
-    print("No database address found in env; Exiting...", file=sys.stderr)
-    sys.exit(1)
-else:
-    engine = create_async_engine(DATABASE_URL)
-    AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
 class Base(AsyncAttrs, DeclarativeBase):
