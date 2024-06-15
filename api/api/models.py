@@ -16,5 +16,5 @@ class LogEntry(Base):
     timestamp = sa.Column(
         sa.DateTime, 
         server_default=sa.func.current_timestamp(), 
-        nullable=False
+        nullable=False,
     )
