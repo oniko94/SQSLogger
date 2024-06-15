@@ -19,7 +19,7 @@ if DATABASE_URL is None:
     print("No database address found in env; Exiting...", file=sys.stderr)
     sys.exit(1)
 
-engine = create_async_engine(DATABASE_URL, echo=True, future=True)
+engine = create_async_engine(DATABASE_URL)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
