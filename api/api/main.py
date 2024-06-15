@@ -8,17 +8,14 @@ from .crud import get_log_entries, create_log_entry
 
 app = FastAPI()
 
-
 @app.on_event("startup")
 async def on_startup():
     await db.initialize()
-
 
 @app.get("/logs", response_model=list[schemas.LogEntry])
 async def read_logs(session: AsyncSession = Depends(db.get_session)):
     logs = await get_log_entries(session)
     return logs
-
 
 @app.post("/log_entry", response_model=schemas.LogEntry)
 async def write_entry(
