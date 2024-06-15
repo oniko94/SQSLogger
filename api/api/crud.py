@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from sqlalchemy.future import select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 
 from .models import LogEntry as LogEntryModel
 from .schemas import (
@@ -10,7 +9,22 @@ from .schemas import (
 )
 
 
+# Explicit mapping is more Pythonic
+# Also grants more control over data
 def process_entry(db_entry: LogEntryModel) -> LogEntrySchema:
+    """
+    A function used to map the SQLAlchemy ORM fields to Pydantic model ones.
+
+    Parameter
+    ---------
+    db_entry : api.api.models.LogEntry
+        A SQLAlchemy model representation we store in the DB
+
+    Returns
+    -------
+    api.api.schemas.LogEntry
+        A Pydantic representation of the LogEntry data from the DB
+    """
     return LogEntrySchema(
         pk=db_entry.pk,
         message=db_entry.message,
@@ -21,7 +35,7 @@ def process_entry(db_entry: LogEntryModel) -> LogEntrySchema:
 
 async def get_log_entries(
     session: AsyncSession, skip: int = 0, limit: int = 200
-) -> List[LogEntrySchema]:
+) -> list[LogEntrySchema]:
     result = await session.execute(
         select(LogEntryModel).offset(skip).limit(limit)
     )
@@ -35,5 +49,4 @@ async def create_log_entry(
     db_entry = LogEntryModel(message=entry.message, level=entry.level)
     session.add(db_entry)
     await session.commit()
-    await session.refresh(db_entry)
     return process_entry(db_entry)

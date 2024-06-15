@@ -14,5 +14,7 @@ class LogEntry(Base):
     message = sa.Column(sa.Text, nullable=False)
     level = sa.Column(sa.Text, nullable=False)
     timestamp = sa.Column(
-        sa.DateTime, server_default=sa.func.current_timestamp(), nullable=False
+        sa.DateTime, 
+        server_default=sa.func.current_timestamp(), 
+        nullable=False
     )
