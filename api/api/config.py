@@ -1,12 +1,47 @@
 # -*- coding: utf-8 -*-
+import base64
 import logging
 import os
 import sys
 from typing import get_type_hints
 
 
-class ConfigError(Exception):
+class ConfigBaseError(Exception):
     pass
+
+
+class ConfigFieldMissingError(ConfigBaseError):
+    """
+    Exception raised when a required variable is missing in the environment
+
+    Parameter
+    ---------
+    field : str
+        A variable required by the configuration manager
+    """
+    def __init__(self, field, message=""):
+        self.message = f"{field} is required, but is missing"
+        super().__init__(self.message)
+
+
+class ConfigTypeCastingError(ConfigBaseError):
+    """
+    Exception raised when attempting to cast type of a value to a required by config fails
+
+    Parameters
+    ----------
+    value : Any
+        A value used in the type conversion
+
+    field : str
+        A config object field
+
+    f_type : Any
+        The type attempted to cast to
+    """
+    def __init__(self, value, field, f_type, message=""):
+        self.message = f"Cannot cast value of {env[field]} to type of {f_type} for {field}"
+        super().__init__(self.message)
 
 
 class ConfigManager:
@@ -31,19 +66,7 @@ class ConfigManager:
             if not field.isupper():
                 continue
 
-            default_value = getattr(self, field, None)
-
-            if default_value is None and env.get(field) is None:
-                raise ConfigError(f"The {field} field is required.")
-
-            # Cast the values to correct types
-            f_type = get_type_hints(ConfigManager)[field]
-            value = f_type(env.get(field, default_value))
-
-            try:
-                self.__setattr__(field, value)
-            except ValueError:
-                raise ConfigError(f"Cannot cast value of {env[field]} to type of {f_type} for {field}")
+            self.__setattr__(field, self.__get_env_var(field, env))
 
         # Build the database URL from env vars and store it in the config object
         db_url = "postgresql+asyncpg://{user}:{pwd}@/{db}?host={host}:{port}".format(
@@ -58,11 +81,30 @@ class ConfigManager:
     def __repr__(self):
         return str(self.__dict__)
 
+    def __get_env_var(self, field: str, env: os.environ) -> any:
+        try:
+            default_value = getattr(self, field, None)
+        except Exception as e:
+            raise ConfigBaseError(e)
+        else: 
+            if default_value is None and env.get(field) is None:
+                raise ConfigFieldMissingError(field)
+
+        # Cast the values to correct types
+        f_type = get_type_hints(ConfigManager)[field]
+
+        try:
+            value = f_type(env.get(field, default_value))
+        except ValueError:
+            raise ConfigTypeCastingError(value, field, f_type)
+        else:
+            return value
+
 
 logger = logging.getLogger("uvicorn.error")
 
 try:
     config = ConfigManager(os.environ)
-except ConfigError as e:
+except ConfigBaseError as e:
     logger.error(e)
     sys.exit(1)
