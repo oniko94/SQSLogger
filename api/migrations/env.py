@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from api import models
+from api.config import config as api_config
 
 logger = getLogger("alembic.env")
 # this is the Alembic Config object, which provides
@@ -20,13 +21,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Retrieve the DB URL from the environment variables
-database = os.environ.get("DATABASE_URL")
-if database is not None:
-    config.set_main_option("sqlalchemy.url", database)
-else:
-    logger.error("No database address found in env; Exiting...")
-    sys.exit(1)
+# Retrieve the database URL from the project configuration
+config.set_main_option("sqlalchemy.url", api_config.DB_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

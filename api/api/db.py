@@ -11,17 +11,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
 
+from .config import config
 from .models import Base
 
 
-logger = logging.getLogger("uvicorn.error")
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if DATABASE_URL is None:
-    logger.error("No database address found in env; Exiting...")
-    sys.exit(1)
-
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(config.DB_URL)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
