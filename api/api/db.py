@@ -11,11 +11,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 from typing import AsyncGenerator
 
-from .config import config
+from .config import DB_URL
 from .models import Base
 
 
-engine = create_async_engine(config.DB_URL)
+engine = create_async_engine(DB_URL)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

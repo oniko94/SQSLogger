@@ -7,6 +7,17 @@ services:
       - 54320:5432
     volumes:
       - ./db:/var/lib/postgres/data
+  # Use localstack to emulate the AWS services
+  localqueue:
+    image: localstack/localstack
+    ports:
+      - 4566:4566
+      - 4510-4559:4510-4559
+    environment:
+      - DEBUG=1
+    # Pass the script for a localstack hook
+    volumes:
+      - "./.bin/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
   logger:
     build:
       dockerfile: Dockerfile
@@ -17,12 +28,4 @@ services:
       - 8000:8000
     depends_on:
       - postgresdb
-  localqueue:
-    image: localstack/localstack
-    ports:
-      - 4566:4566
-      - 4510-4559:4510-4559
-    environment:
-      - DEBUG=${DEBUG:-0}
-    volumes:
-      - "./.bin/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
+      - localqueue

@@ -14,4 +14,4 @@ COPY run.sh run.sh
 COPY api api
 RUN poetry install --only-root --no-interaction --no-cache
 # Execute the script that applies the migration and starts the application
-CMD ["./run.sh"]
+CMD [ "./run.sh"]

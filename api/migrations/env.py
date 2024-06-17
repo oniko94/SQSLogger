@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 from api import models
-from api.config import config as api_config
+from api.config import DB_URL
 
 logger = getLogger("alembic.env")
 # this is the Alembic Config object, which provides
@@ -22,7 +22,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Retrieve the database URL from the project configuration
-config.set_main_option("sqlalchemy.url", api_config.DB_URL)
+config.set_main_option("sqlalchemy.url", DB_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

@@ -18,7 +18,7 @@ async def read_logs(
     return logs
 
 
-@app.post("/logs", response_model=LogEntry)
+@app.post("/logs", response_model=LogEntryBase)
 async def write_entry(
     entry: LogEntryBase, session: AsyncSession = Depends(get_session)
 ) -> LogEntry:

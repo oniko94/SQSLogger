@@ -1,14 +1,22 @@
 # -*- coding: utf-8 -*-
+import aioboto3
+import json
+import logging
+
+from base64 import b64decode
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from .config import DB_URL, SQS_QUEUE_NAME
 from .models import LogEntry as LogEntryModel
 from .schemas import (
     LogEntry as LogEntrySchema, 
     LogEntryBase as LEBaseSchema
 )
+from .sqs import AsyncSQSClient
 
 
+logger = logging.getLogger(__name__)
 # Explicit mapping is more Pythonic
 # Also grants more control over data
 def process_entry(db_entry: LogEntryModel) -> LogEntrySchema:
@@ -45,8 +53,17 @@ async def get_log_entries(
 
 async def create_log_entry(
     session: AsyncSession, entry: LEBaseSchema
-) -> LogEntrySchema:
-    db_entry = LogEntryModel(message=entry.message, level=entry.level)
-    session.add(db_entry)
-    await session.commit()
-    return process_entry(db_entry)
+):
+    sqs_ctx = AsyncSQSClient(logger).create_client()
+
+    async with sqs_ctx as sqs:
+        logger.info("Retrieving the SQS Queue URL")
+        queue = await sqs.get_queue_url(QueueName=SQS_QUEUE_NAME)
+
+        logger.info("Sending the message....")
+        await sqs.send_message(
+            QueueUrl=queue.get("QueueUrl"),
+            MessageBody=entry.model_dump_json(indent=4)
+        )
+        logger.info("Message sent!")
+    return entry
