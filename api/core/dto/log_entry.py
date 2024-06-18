@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
+
+from core.database.models import LogEntry
 
 
-class LogEntryBase(BaseModel):
+class BaseDTO(BaseModel):
     """
     A Pydantic model we use to correctly map the only fields we need from the incoming request.
-    
+
     It's better not to allow fields like id/pk and timestamp to be overridden with data from request body.
 
     Attributes
@@ -17,11 +19,12 @@ class LogEntryBase(BaseModel):
     level : str
         The log entry level of severity/importance (i.e. debug, info etc.)
     """
+
     message: str
     level: str
 
 
-class LogEntry(LogEntryBase):
+class ModelDTO(BaseDTO):
     """
     A Pydantic model we use to display the data to the user, includes the fields left out in the base model.
 
@@ -41,5 +44,30 @@ class LogEntry(LogEntryBase):
     timestamp : datetime.datetime
         An exact timestamp of the log
     """
+
     pk: int
     timestamp: datetime
+
+
+# Explicit mapping is more Pythonic
+# Also grants more control over data
+def map_dto(db_entry: LogEntry) -> ModelDTO:
+    """
+    A function used to map the SQLAlchemy ORM fields to Pydantic model ones.
+
+    Parameter
+    ---------
+    db_entry : api.api.models.LogEntry
+        A SQLAlchemy model representation we store in the DB
+
+    Returns
+    -------
+    api.api.schemas.LogEntry
+        A Pydantic representation of the LogEntry data from the DB
+    """
+    return ModelDTO(
+        pk=db_entry.pk,
+        message=db_entry.message,
+        level=db_entry.level,
+        timestamp=db_entry.timestamp,
+    )

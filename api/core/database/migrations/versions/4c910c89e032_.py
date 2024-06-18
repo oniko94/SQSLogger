@@ -1,8 +1,8 @@
-"""Add LogEntry model
+"""empty message
 
-Revision ID: 339481241640
+Revision ID: 4c910c89e032
 Revises: 
-Create Date: 2024-06-15 01:47:13.678313
+Create Date: 2024-06-18 12:44:06.708738
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "339481241640"
+revision: str = "4c910c89e032"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

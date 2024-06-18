@@ -13,6 +13,9 @@ fastapi = "~0.111.0"
 sqlalchemy = "~2.0.30"
 asyncpg = "~0.29.0"
 alembic = "~1.13.1"
+aioboto3 = "~13.0.1"
+colorama = "^0.4.6"
+coloredlogs = "^15.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

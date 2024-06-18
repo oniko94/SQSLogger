@@ -1,7 +1,4 @@
 import asyncio
-import os
-import sys
-from logging import getLogger
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -9,24 +6,21 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from api import models
 
-logger = getLogger("alembic.env")
+from core.config import DB_URL
+from core.database import models
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Retrieve the DB URL from the environment variables
-database = os.environ.get("DATABASE_URL")
-if database is not None:
-    config.set_main_option("sqlalchemy.url", database)
-else:
-    logger.error("No database address found in env; Exiting...")
-    sys.exit(1)
+# Retrieve the database URL from the project configuration
+config.set_main_option("sqlalchemy.url", DB_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
