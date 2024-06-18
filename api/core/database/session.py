@@ -19,5 +19,7 @@ def get_session() -> async_sessionmaker[AsyncSession]:
     Since we use it outside of FastAPI context in a custom worker
     """
     return async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
+        bind=engine, 
+        class_=AsyncSession, 
+        expire_on_commit=False
     )
