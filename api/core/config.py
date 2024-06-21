@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
+import multiprocessing as mp
 
 AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 # Can be None
 AWS_ENDPOINT = os.environ.get("AWS_ENDPOINT_URL", None)
 AWS_REGION = os.environ["AWS_REGION"]
 AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-
+# Pass if you need to specify the number of workers for the multiprocessing pool
+MAX_WORKERS = int(os.environ.get("MAX_WORKERS", mp.cpu_count()))
 POSTGRES_DB = os.environ["POSTGRES_DB"]
 POSTGRES_HOST = os.environ["POSTGRES_HOST"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]

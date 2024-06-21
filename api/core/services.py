@@ -1,14 +1,8 @@
 # -*- coding: utf-8 -*-
-from fastapi import Depends
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from typing import AsyncGenerator
 
-from .config import DB_URL, SQS_QUEUE_NAME
-from .database.session import get_session
 from .database.models import LogEntry
 from .dto import log_entry
-from .sqs_client import AsyncSQSClient
 
 
 # TODO: Implement redis caching

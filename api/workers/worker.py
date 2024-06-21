@@ -19,10 +19,10 @@ class Worker:
     """
 
     def __init__(self) -> None:
-        pass
+        self.query_url: str = ""
 
-    async def start(self) -> None:
-        logger.info("Worker running")
+    def start(self) -> None:
+        logger.info("Starting a worker process")
         # Instantiate the session client context manager
         # According to boto3 documentation they are not really thread safe
         # So it is better to keep a client instance per process
@@ -31,42 +31,49 @@ class Worker:
         session = get_session()
 
         try:
-            async with sqs_ctx as sqs:
-                logger.info("Retrieving the SQS Queue URL")
-                queue = await sqs.get_queue_url(QueueName=SQS_QUEUE_NAME)
-                q_url = queue["QueueUrl"]
-
-                logger.info("Awaiting messages...")
-                while True:
-                    # Polling the queue for new messages each 10 seconds
-                    response = await sqs.receive_message(
-                        QueueUrl=q_url, 
-                        WaitTimeSeconds=10, 
-                        VisibilityTimeout=10
-                    )
-                    for message in response.get("Messages", []):
-                        logger.info(f"Message received!")
-                        msg_id = message["ReceiptHandle"]
-                        # Deserialize the message body into a valid log entry object
-                        entry = log_entry.BaseDTO.parse_raw(message["Body"])
-                        try:
-                            logger.info(
-                                msg=f"Saving message info to the database..."
-                            )
-                            # Save it to the database
-                            log = await save_log_entry(entry, session)
-                        except Exception:
-                            logger.exception("Worker process failed;")
-                        else:
-                            # Once the message is saved it is better to delete it to keep the queue clean
-                            logger.info(
-                                msg=f"Log entry {log.pk} stored to the database;"
-                            )
-                            logger.info(
-                                msg=f"Deleting message {msg_id} from queue {q_url}"
-                            )
-                            await sqs.delete_message(
-                                QueueUrl=q_url, ReceiptHandle=msg_id
-                            )
+            asyncio.run(self.__main(sqs_ctx, session))
         except asyncio.CancelledError:
             logger.info("Interrupt signal received. Shutting down...")
+
+    async def __main(self, sqs_ctx, db_session) -> None:
+        async with sqs_ctx as sqs:
+            queue = await sqs.get_queue_url(QueueName=SQS_QUEUE_NAME)
+            self.query_url = queue["QueueUrl"]
+
+            logger.info(f"Subscribing to {SQS_QUEUE_NAME}.")
+            while True:
+                # Polling the queue for new messages each 10 seconds
+                await self.__handle_messages(sqs, db_session)
+
+    async def __handle_messages(self, sqs_client, db_session) -> None:
+        response = await sqs_client.receive_message(
+            QueueUrl=self.query_url,
+            WaitTimeSeconds=10, 
+            VisibilityTimeout=10
+        )
+
+        for message in response.get("Messages", []):
+            logger.info(f"Message received!")
+            msg_id = message["ReceiptHandle"]
+            # Deserialize the message body into a valid log entry object
+            entry = log_entry.BaseDTO.parse_raw(message["Body"])
+            try:
+                logger.info(
+                     msg=f"Saving message info to the database..."
+                )
+                # Save it to the database
+                log = await save_log_entry(entry, db_session)
+            except Exception:
+                logger.exception("Worker process failed;")
+            else:
+                # Delete the message after
+                logger.info(
+                    msg=f"Log entry {log.pk} stored to the database;"
+                )
+                logger.info(
+                    msg=f"Deleting message {msg_id} from queue {self.query_url}"
+                )
+                await sqs_client.delete_message(
+                    QueueUrl=self.query_url,
+                    ReceiptHandle=msg_id
+                )
