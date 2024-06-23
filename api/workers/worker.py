@@ -14,12 +14,11 @@ logger = create_logger("api.workers")
 
 class Worker:
     """
-    A custom worker class.
-    # TODO: test if can be used with multiprocessing Pool
+        A custom worker class.
+        Uses asyncio, but also is expected to run multiprocessed
     """
-
     def __init__(self) -> None:
-        self.query_url: str = ""
+        self.queue_url: str = ""
 
     def start(self) -> None:
         logger.info("Starting a worker process")
@@ -38,7 +37,7 @@ class Worker:
     async def __main(self, sqs_ctx, db_session) -> None:
         async with sqs_ctx as sqs:
             queue = await sqs.get_queue_url(QueueName=SQS_QUEUE_NAME)
-            self.query_url = queue["QueueUrl"]
+            self.queue_url = queue["QueueUrl"]
 
             logger.info(f"Subscribing to {SQS_QUEUE_NAME}.")
             while True:
@@ -47,7 +46,7 @@ class Worker:
 
     async def __handle_messages(self, sqs_client, db_session) -> None:
         response = await sqs_client.receive_message(
-            QueueUrl=self.query_url,
+            QueueUrl=self.queue_url,
             WaitTimeSeconds=10, 
             VisibilityTimeout=10
         )
@@ -62,18 +61,18 @@ class Worker:
                      msg=f"Saving message info to the database..."
                 )
                 # Save it to the database
-                log = await save_log_entry(entry, db_session)
+                record = await save_log_entry(entry, db_session)
             except Exception:
                 logger.exception("Worker process failed;")
             else:
                 # Delete the message after
                 logger.info(
-                    msg=f"Log entry {log.pk} stored to the database;"
+                    msg=f"Log entry {record.pk} stored to the database;"
                 )
                 logger.info(
-                    msg=f"Deleting message {msg_id} from queue {self.query_url}"
+                    msg=f"Deleting message {msg_id} from queue {self.queue_url}"
                 )
                 await sqs_client.delete_message(
-                    QueueUrl=self.query_url,
+                    QueueUrl=self.queue_url,
                     ReceiptHandle=msg_id
                 )

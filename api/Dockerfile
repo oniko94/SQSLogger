@@ -8,20 +8,19 @@ COPY pyproject.toml pyproject.toml
 COPY poetry.lock poetry.lock
 RUN poetry install --no-root --no-interaction --no-cache --only=main
 # The most frequently changed layer (source code/migrations)
-#COPY __init__.py __init__.py
 COPY alembic.ini alembic.ini
 COPY core core
+COPY .bin/run.sh run.sh
 
 # Isolated api endpoints image
 FROM server_base AS server_api
-COPY .bin/run.sh run.sh
-COPY api api
+COPY api app
 RUN poetry install --only-root --no-interaction --no-cache
 # Install the migrations and run the server
 CMD ["./run.sh"]
 
 # Isolated DB worker image
 FROM server_base as server_worker
-COPY workers api
+COPY workers app
 RUN poetry install --only-root --no-interaction --no-cache
-CMD ["python", "-m", "api"]
+CMD ["./run.sh"]

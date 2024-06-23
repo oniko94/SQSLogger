@@ -4,8 +4,7 @@ import aws_cdk as cdk
 
 from infra.infra_stack import InfraStack
 
-
 app = cdk.App()
-InfraStack(app, "InfraStack")
+InfraStack(app, "SQSLogger")
 
-app.synth()
+app.synth(validate_on_synthesis=True)
