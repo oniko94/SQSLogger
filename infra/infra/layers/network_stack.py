@@ -14,7 +14,8 @@ class NetworkStack(Stack):
             scope=self,
             id="vpc.logger",
             ip_addresses=ec2.IpAddresses.cidr(VPC_CIDR),
-            max_azs=2,
+            max_azs=1,
+            nat_gateways=1,
             subnet_configuration=[
                 {
                     "cidrMask": 24,
@@ -32,4 +33,31 @@ class NetworkStack(Stack):
                     "subnetType": ec2.SubnetType.PRIVATE_ISOLATED,
                 },
             ],
+            gateway_endpoints={
+                "S3": ec2.GatewayVpcEndpointOptions(
+                    service=ec2.GatewayVpcEndpointAwsService.S3,
+                )
+            },
+        )
+
+        self.vpc.add_interface_endpoint(
+            id="ecr-docker.logger.vpcinterface",
+            service=ec2.InterfaceVpcEndpointAwsService.ECR_DOCKER,
+            subnets=ec2.SubnetSelection(
+                subnets=self.vpc.private_subnets,
+            ),
+        )
+        self.vpc.add_interface_endpoint(
+            id="ecr.logger.vpcinterface",
+            service=ec2.InterfaceVpcEndpointAwsService.ECR,
+            subnets=ec2.SubnetSelection(
+                subnets=self.vpc.private_subnets,
+            ),
+        )
+        self.vpc.add_interface_endpoint(
+            id="secrets.logger.vpcinterface",
+            service=ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+            subnets=ec2.SubnetSelection(
+                subnets=self.vpc.private_subnets,
+            ),
         )

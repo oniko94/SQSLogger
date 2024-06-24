@@ -21,7 +21,7 @@ class DatabaseStack(Stack):
             id="DatabaseSubnetGroup",
             description="Database subnet group",
             vpc=scope.vpc,
-            subnet_group_name="database.rds.logger",
+            subnet_group_name="rds.logger.subnet_group",
             vpc_subnets=ec2.SubnetSelection(
                 subnets=scope.vpc.isolated_subnets,
             ),

@@ -44,7 +44,7 @@ line_length = 80
 [tool.flake8]
 max-line-length = 80
 inline-quotes = "double"
-ignore = ["B009", "B010", "W503"]
+ignore = ["B009", "B010", "W503", "TC002"]
 per-file-ignores = ["tests/*: S101"]
 
 [tool.mypy]

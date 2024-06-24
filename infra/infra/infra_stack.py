@@ -1,5 +1,6 @@
 from aws_cdk import Duration, Stack
 from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecs as ecs
 from constructs import Construct
 
 from .layers.database_stack import DatabaseStack
@@ -12,3 +13,5 @@ class InfraStack(Stack):
 
         self.vpc = NetworkStack(self, "Network", **kwargs).vpc
         self.db = DatabaseStack(self, "Database", **kwargs)
+
+        cluster = ecs.Cluster(self, "Logger", vpc=self.vpc)
