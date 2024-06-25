@@ -2,7 +2,7 @@ services:
   postgresdb:
     image: postgres
     restart: always
-    env_file: .env
+    # env_file: .env
     ports:
       - 54320:5432
     volumes:
@@ -36,7 +36,7 @@ services:
       target: server_api
     container_name: api-endpoint
     restart: always
-    env_file: .env
+    # env_file: .env
     ports:
       - 8080:8080
     healthcheck:
@@ -57,7 +57,7 @@ services:
       target: server_worker
     container_name: api-worker
     restart: always
-    env_file: .env
+    # env_file: .env
     depends_on:
       postgresdb:
         condition: service_healthy

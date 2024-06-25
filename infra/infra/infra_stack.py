@@ -69,7 +69,7 @@ class InfraStack(Stack):
                 ],
                 effect=iam.Effect.ALLOW,
                 resources=[
-                    f"arn:aws:sqs:{self.region}:${self.account}:${queue.queue_name}"
+                    f"arn:aws:sqs:{self.region}:{self.account}:{queue.queue_name}"
                 ],
             ),
         )
@@ -97,7 +97,7 @@ class InfraStack(Stack):
                 resources=["*"],
             ),
         )
-        print(postgres)
+
         container_env = {
             "secrets": {
                 "POSTGRES_USER": ecs.Secret.from_secrets_manager(
@@ -108,14 +108,14 @@ class InfraStack(Stack):
                 ),
             },
             "environment": {
-                "POSTGRES_DATABASE": DATABASE_NAME,
+                "POSTGRES_DB": DATABASE_NAME,
                 "POSTGRES_HOST": postgres.db_instance_endpoint_address,
                 "POSTGRES_PORT": postgres.db_instance_endpoint_port,
                 "AWS_REGION": self.region,
                 "SQS_QUEUE_NAME": queue.queue_name,
             },
         }
-
+        print(container_env)
         image_repository = ecr.Repository.from_repository_name(
             self, id="docker.logger.repo", repository_name="sqslogger"
         )
@@ -128,11 +128,14 @@ class InfraStack(Stack):
             execution_role=access_role,
         )
         api_taskdef.add_container(
-            "api.latest",
-            image=ecs.ContainerImage.from_ecr_repository(image_repository),
+            "api-latest",
+            image=ecs.ContainerImage.from_ecr_repository(
+                repository=image_repository, tag="api.latest"
+            ),
             port_mappings=[ecs.PortMapping(container_port=8080)],
             secrets=container_env["secrets"],
             environment=container_env["environment"],
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="api-service-"),
         )
         api_service = ecs_patterns.ApplicationLoadBalancedFargateService(
             self,
@@ -150,10 +153,13 @@ class InfraStack(Stack):
             execution_role=access_role,
         )
         worker_taskdef.add_container(
-            "worker.latest",
-            image=ecs.ContainerImage.from_ecr_repository(image_repository),
+            "worker-latest",
+            image=ecs.ContainerImage.from_ecr_repository(
+                repository=image_repository, tag="worker.latest"
+            ),
             environment=container_env["environment"],
             secrets=container_env["secrets"],
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="worker-service-"),
         )
         worker_service = ecs.FargateService(
             self,
