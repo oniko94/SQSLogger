@@ -1,6 +1,8 @@
 from aws_cdk import RemovalPolicy, Stack
 from aws_cdk import aws_ec2 as ec2
+from aws_cdk import aws_ecr as ecr
 from aws_cdk import aws_ecs as ecs
+from aws_cdk import aws_ecs_patterns as ecs_patterns
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_rds as rds
 from aws_cdk import aws_sqs as sqs
@@ -15,9 +17,7 @@ class InfraStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         queue = sqs.Queue(self, "logs.queue")
-
         vpc = NetworkStack(self, "Network", **kwargs).vpc
-
         subnet_group = rds.SubnetGroup(
             scope=self,
             id="DatabaseSubnetGroup",
@@ -28,17 +28,18 @@ class InfraStack(Stack):
                 subnets=vpc.isolated_subnets,
             ),
         )
-        db = rds.DatabaseInstance(
+        postgres = rds.DatabaseInstance(
             scope=self,
             id=DATABASE_NAME,
             engine=rds.DatabaseInstanceEngine.POSTGRES,
             vpc=vpc,
             subnet_group=subnet_group,
             credentials=rds.Credentials.from_generated_secret(DATABASE_USER),
-            instance_type=ec2.InstanceType("t2.micro"),
+            instance_type=ec2.InstanceType("t3.medium"),
             port=DATABASE_PORT,
             allocated_storage=80,
             multi_az=True,
+            database_name=DATABASE_NAME,
             removal_policy=RemovalPolicy.DESTROY,
             deletion_protection=False,
             publicly_accessible=False,
@@ -64,6 +65,7 @@ class InfraStack(Stack):
                     "sqs:GetQueueUrl",
                     "sqs:ListQueues",
                     "sqs:ReceiveMessage",
+                    "sqs:SendMessage",
                 ],
                 effect=iam.Effect.ALLOW,
                 resources=[
@@ -84,4 +86,78 @@ class InfraStack(Stack):
                 conditions={"StringEquals": {"aws:SourceVpc": vpc.vpc_id}},
             ),
         )
-        cluster = ecs.Cluster(self, "Logger", vpc=vpc)
+        access_role.add_to_policy(
+            iam.PolicyStatement(
+                sid="SecretReadAccess",
+                actions=[
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecrets",
+                ],
+                effect=iam.Effect.ALLOW,
+                resources=["*"],
+            ),
+        )
+        print(postgres)
+        container_env = {
+            "secrets": {
+                "POSTGRES_USER": ecs.Secret.from_secrets_manager(
+                    postgres.secret
+                ),
+                "POSTGRES_PASSWORD": ecs.Secret.from_secrets_manager(
+                    postgres.secret
+                ),
+            },
+            "environment": {
+                "POSTGRES_DATABASE": DATABASE_NAME,
+                "POSTGRES_HOST": postgres.db_instance_endpoint_address,
+                "POSTGRES_PORT": postgres.db_instance_endpoint_port,
+                "AWS_REGION": self.region,
+                "SQS_QUEUE_NAME": queue.queue_name,
+            },
+        }
+
+        image_repository = ecr.Repository.from_repository_name(
+            self, id="docker.logger.repo", repository_name="sqslogger"
+        )
+        cluster = ecs.Cluster(
+            self, id="Logger", vpc=vpc, enable_fargate_capacity_providers=True
+        )
+        api_taskdef = ecs.FargateTaskDefinition(
+            self,
+            id="api-task.logger",
+            execution_role=access_role,
+        )
+        api_taskdef.add_container(
+            "api.latest",
+            image=ecs.ContainerImage.from_ecr_repository(image_repository),
+            port_mappings=[ecs.PortMapping(container_port=8080)],
+            secrets=container_env["secrets"],
+            environment=container_env["environment"],
+        )
+        api_service = ecs_patterns.ApplicationLoadBalancedFargateService(
+            self,
+            id="logger.api",
+            cluster=cluster,
+            task_definition=api_taskdef,
+            task_subnets=ec2.SubnetSelection(
+                subnets=vpc.private_subnets,
+            ),
+            public_load_balancer=True,
+        )
+        worker_taskdef = ecs.FargateTaskDefinition(
+            self,
+            " worker-task.logger",
+            execution_role=access_role,
+        )
+        worker_taskdef.add_container(
+            "worker.latest",
+            image=ecs.ContainerImage.from_ecr_repository(image_repository),
+            environment=container_env["environment"],
+            secrets=container_env["secrets"],
+        )
+        worker_service = ecs.FargateService(
+            self,
+            "logger.worker",
+            cluster=cluster,
+            task_definition=worker_taskdef,
+        )

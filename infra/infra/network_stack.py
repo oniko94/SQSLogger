@@ -14,7 +14,7 @@ class NetworkStack(Stack):
             scope=self,
             id="vpc.logger",
             ip_addresses=ec2.IpAddresses.cidr(VPC_CIDR),
-            max_azs=1,
+            max_azs=2,
             nat_gateways=1,
             subnet_configuration=[
                 {
